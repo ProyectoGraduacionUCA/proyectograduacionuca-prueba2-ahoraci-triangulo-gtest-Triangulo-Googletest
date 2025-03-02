@@ -1,108 +1,105 @@
+name: Evaluación Automática
 
-  name: Evaluación Automática
-  
-  on:
-    push:
-      paths:
-        - 'Ejercicio.cpp'
-        - 'tests/**'
-      branches:
-        - main
-  
-  permissions:
-    contents: write
-  
-  jobs:
-    build-and-test:
-      name: 🚀 Evaluación Automática
-      runs-on: ubuntu-latest
-  
-      steps:
-        - name: 🛎️ Clonar el repositorio
-          uses: actions/checkout@v3
-  
-        - name: 🛠️ Instalar Dependencias
-          run: |
-            sudo apt update && sudo apt install -y g++
-            git clone https://github.com/google/googletest.git
-            mkdir googletest/build
-            cd googletest/build
-            cmake ..
-            make
-            sudo make install
-  
-        - name: 🛠️ Compilar código del estudiante
-          run: g++ -std=c++20 -DTEST_MODE -c Ejercicio.cpp -o Ejercicio.o
-  
-        - name: 🛠️ Compilar pruebas con Google Test
-          run: |
-            for file in tests/*.cpp; do
-             g++ -std=c++20 -c $file -o ${file%.cpp}.o -I/usr/local/include -pthread
-            done
-  
-        - name: 🔗 Enlazar código y pruebas
-          run: g++ -o test Ejercicio.o tests/*.o -lgtest -lgtest_main -pthread
-  
-        - name: 🚀 Ejecutar pruebas con Google Test y capturar salida
-          run: |
-            ./test > test_output.log || true
-            cat test_output.log  # Mostrar la salida para depuración
-            
-        - name: 📊 Analizar resultados y calcular nota
-          id: calcular_calificacion
-          run: |
-            TOTAL_TESTS=$(grep -c "\[ RUN      \]" test_output.log || echo 0)
-            PASSED_TESTS=$(grep -c "\[       OK \]" test_output.log || echo 0)
-            FAILED_TESTS=$(grep -c "\[  FAILED  \]" test_output.log || echo 0)
-  
-            if [ "$TOTAL_TESTS" -eq 0 ]; then
-              SCORE=0
-            else
-              SCORE=$((100 * PASSED_TESTS / TOTAL_TESTS))
-            fi
-  
-            echo "📊 Calificación automática: $SCORE/100" > test_summary.txt
-            echo "--------------------------------------" >> test_summary.txt
-            echo "Total de pruebas: $TOTAL_TESTS" >> test_summary.txt
-            echo "Pruebas aprobadas: $PASSED_TESTS" >> test_summary.txt
-            echo "Pruebas fallidas: $FAILED_TESTS" >> test_summary.txt
-            echo "Nota final: $SCORE/100" >> test_summary.txt
-            echo "" >> test_summary.txt
-  
-            echo "✅ Pruebas aprobadas:" >> test_summary.txt
-            grep "\[       OK \]" test_output.log | sed -E 's/.*\] (.*) \(.*/- \1/' >> test_summary.txt || echo "- Ninguna" >> test_summary.txt
-  
-            echo "" >> test_summary.txt
-            echo "❌ Pruebas fallidas:" >> test_summary.txt
-            grep "\[  FAILED  \]" test_output.log | sed -E 's/.*\] (.*) \(.*/- \1/' >> test_summary.txt || echo "- Ninguna" >> test_summary.txt
-  
-            echo "SCORE=$SCORE" >> $GITHUB_ENV
-            echo "SCORE=$SCORE" >> $GITHUB_OUTPUT
-  
-        - name: 💾 Guardar resultados de pruebas
-          uses: actions/upload-artifact@v4
-          with:
-            name: test-results
-            path: |
-              test_output.log
-              test_summary.txt
-  
-        - name: 📌 Guardar la calificación en una rama protegida
-          run: |
-            git config --global user.name "GitHub Bot"
-            git config --global user.email "bot@github.com"
-            git fetch origin calificaciones || true
-            git checkout -B calificaciones origin/calificaciones || git checkout -b calificaciones
-  
-            SCORE=$SCORE
-            PASSED_TESTS=$(grep -c "\[       OK \]" test_output.log || echo 0)
-            FAILED_TESTS=$(grep -c "\[  FAILED  \]" test_output.log || echo 0)
-  
-            echo "📊 Calificación automática: $SCORE/100" > calificacion.txt
-            echo "--------------------------------------" >> calificacion.txt
-            cat test_summary.txt >> calificacion.txt  # Agregar el resumen de pruebas
-  
-            git add calificacion.txt
-            git commit -m "📊 Calificación: $SCORE/100 | ✅ Aprobadas: $PASSED_TESTS | ❌ Fallidas: $FAILED_TESTS"
-            git push origin calificaciones --force
-  
+on:
+  push:
+    paths:
+      - 'Ejercicio.cpp'
+      - 'tests/**'
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-test:
+    name: 🚀 Evaluación Automática
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Clonar el repositorio
+        uses: actions/checkout@v3
+
+      - name: 🛠️ Instalar Dependencias
+        run: |
+          sudo apt update && sudo apt install -y g++
+          git clone https://github.com/google/googletest.git
+          mkdir googletest/build
+          cd googletest/build
+          cmake ..
+          make
+          sudo make install
+
+      - name: 🛠️ Compilar código del estudiante
+        run: g++ -std=c++20 -DTEST_MODE -c Ejercicio.cpp -o Ejercicio.o
+
+      - name: 🛠️ Compilar pruebas con Google Test
+        run: |
+          for file in tests/*.cpp; do
+            g++ -std=c++20 -c $file -o ${file%.cpp}.o -I/usr/local/include -pthread
+          done
+
+      - name: 🔗 Enlazar código y pruebas
+        run: g++ -o test Ejercicio.o tests/*.o -lgtest -lgtest_main -pthread
+
+      - name: 🚀 Ejecutar pruebas con Google Test y capturar salida
+        run: |
+          ./test > test_output.log || true
+          cat test_output.log  # Mostrar la salida para depuración
+
+      - name: 📊 Analizar resultados y calcular nota
+        id: calcular_calificacion
+        run: |
+          TOTAL_TESTS=$(grep -c "\[ RUN      \]" test_output.log || echo 0)
+          PASSED_TESTS=$(grep -c "\[       OK \]" test_output.log || echo 0)
+          FAILED_TESTS=$(grep -c "\[  FAILED  \]" test_output.log || echo 0)
+
+          if [ "$TOTAL_TESTS" -eq 0 ]; then
+            SCORE=0
+          else
+            SCORE=$((10 * PASSED_TESTS / TOTAL_TESTS))
+          fi
+
+          echo "GRADE=$SCORE/10" >> $GITHUB_ENV
+          echo "GRADE=$SCORE/10" >> $GITHUB_OUTPUT
+
+          echo "📊 Calificación automática: $SCORE/10" > test_summary.txt
+          echo "--------------------------------------" >> test_summary.txt
+          echo "Total de pruebas: $TOTAL_TESTS" >> test_summary.txt
+          echo "Pruebas aprobadas: $PASSED_TESTS" >> test_summary.txt
+          echo "Pruebas fallidas: $FAILED_TESTS" >> test_summary.txt
+          echo "Nota final: $SCORE/10" >> test_summary.txt
+          echo "" >> test_summary.txt
+
+          echo "📝 Autograding Reporter" >> test_summary.txt
+          echo "----------------------------" >> test_summary.txt
+          grep "\[       OK \]" test_output.log | awk '{print "| " $3 " | 1 | 1 |"}' >> test_summary.txt
+          echo "----------------------------" >> test_summary.txt
+          echo "| Total: | $SCORE | 10 |" >> test_summary.txt
+          echo "----------------------------" >> test_summary.txt
+          echo "🏆 Grand total tests passed: $PASSED_TESTS/$TOTAL_TESTS" >> test_summary.txt
+
+      - name: 📢 Reportar calificación en GitHub Actions
+        run: |
+          echo "::notice title=Calificación::$SCORE/10"
+          echo "::notice title=Autograding Report::{\"totalPoints\":$SCORE,\"maxPoints\":10}"
+          if [ "$SCORE" -lt 6 ]; then
+            echo "::error title=Calificación Insuficiente::El estudiante obtuvo una calificación de $SCORE/10."
+          fi
+
+      - name: 💾 Guardar resultados de pruebas
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test_output.log
+            test_summary.txt
+
+      - name: 📌 Publicar resumen en Actions
+        run: |
+          echo "# 📊 Resumen de Evaluación" >> $GITHUB_STEP_SUMMARY
+          cat test_summary.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: 📜 Exportar calificación para GitHub Classroom
+        run: |
+          echo "{\"tests\":[{\"name\":\"Total\",\"score\":$SCORE,\"max_score\":10}]}" > .github/classroom/autograding.json
