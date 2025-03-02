@@ -1,0 +1,45 @@
+#include <gtest/gtest.h>
+
+// Declaramos la función para que el enlazador la encuentre en Ejercicio.o
+extern std::string imprimirTriangulo(int altura);
+
+// Test para altura 1
+TEST(TrianguloTest, AlturaUno) {
+    std::string resultado = imprimirTriangulo(1);
+    std::string esperado = "*\n";
+    EXPECT_EQ(resultado, esperado);
+}
+
+// Test para altura 3
+TEST(TrianguloTest, AlturaTres) {
+    std::string resultado = imprimirTriangulo(3);
+    std::string esperado = "*\n**\n***\n";
+    EXPECT_EQ(resultado, esperado);
+}
+
+// Test para altura 5
+TEST(TrianguloTest, AlturaCinco) {
+    std::string resultado = imprimirTriangulo(5);
+    std::string esperado = "*\n**\n***\n****\n*****\n";
+    EXPECT_EQ(resultado, esperado);
+}
+
+// Test de borde para altura 0
+TEST(TrianguloTest, AlturaCero) {
+    std::string resultado = imprimirTriangulo(0);
+    std::string esperado = "";
+    EXPECT_EQ(resultado, esperado);
+}
+
+// Test de borde para altura negativa
+TEST(TrianguloTest, AlturaNegativa) {
+    std::string resultado = imprimirTriangulo(-3);
+    std::string esperado = "";
+    EXPECT_EQ(resultado, esperado);
+}
+
+// Definir main() para ejecutar Google Test
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
